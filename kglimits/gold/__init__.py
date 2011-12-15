@@ -48,7 +48,7 @@ def read_gold_output(command):
     log("Call: %s"%(" ".join(command)))
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=logfile)
 
-    results = {}
+    results = []
     reader = csv.reader(p.stdout,delimiter="|")
 
     try:
@@ -60,25 +60,24 @@ def read_gold_output(command):
 
     for row in reader:
         print >>logfile, row
-        name = row[0].lower()
-
-        if name in results:
-            log(None)
-            raise RuntimeError("We found name '%s' returned from '%s' multiple times."%(name,command))
-
-        results[name] = {}
+        this_row = {}
 
         i = 0
         for i in range(0,len(headers)):
             key = headers[i]
             value = row[i]
-            results[name][key] = value
+            this_row[key] = value
+
+        results.append(this_row)
 
     retcode = p.wait()
     if retcode != 0:
         log("Returned: %d (error)"%(retcode))
         log(None)
         raise subprocess.CalledProcessError(retcode, command)
+
+    if len(headers) == 0:
+        raise RuntimeError("Command '%s' didn't return any headers."%command)
 
     log("Returned: %d (good)"%(retcode))
     return results
@@ -88,18 +87,25 @@ def get_gold_user(username):
     cmd = [ "glsuser", "-u", username, "--raw" ]
     results = read_gold_output(cmd)
 
-    username = username.lower()
-    if username in results:
-        log("Found '%s'"%(results))
-        return results[username]
-    else:
-        log("Not found")
+    if len(results) == 0:
         return None
+    elif len(results) > 1:
+        raise RuntimeError("Command returned multiple results for '%s'."%username)
+
+    the_result = results[0]
+    if username.lower() != the_result["Name"].lower():
+        raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_result["User"]))
+
+    return the_result
 
 # Get the project details from Gold
 def get_gold_user_balance(username):
     cmd = [ "gbalance", "-u", username, "--raw" ]
     results = read_gold_output(cmd)
+
+    if len(results) == 0:
+        return None
+
     return results
 
 # Get the project details from Gold
@@ -107,13 +113,16 @@ def get_gold_project(projectname):
     cmd = [ "glsproject", "-p", projectname, "--raw" ]
     results = read_gold_output(cmd)
 
-    projectname = projectname.lower()
-    if projectname in results:
-        log("Found '%s'"%(results))
-        return results[projectname]
-    else:
-        log("Not found")
+    if len(results) == 0:
         return None
+    elif len(results) > 1:
+        raise RuntimeError("Command returned multiple results for '%s'."%projectname)
+
+    the_result = results[0]
+    if projectname.lower() != the_result["Name"].lower():
+        raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_result["Name"]))
+
+    return the_result
 
 def get_gold_users_in_project(projectname):
     gold_project = get_gold_project(projectname)
@@ -135,7 +144,7 @@ def get_gold_projects_in_user(username):
         raise RuntimeError("User '%s' does not exist in gold"%(username))
 
     projects = []
-    for k, v in gold_balance.iteritems():
+    for v in gold_balance:
         projects.append(v["Name"])
     return projects
 
