@@ -31,7 +31,7 @@ INSTALLED_APPS += (
     'kglimits.gold',
 )
 
-4. Test and fix breakage.
+4. Test and fix breakage. Log file /tmp/gold.log will help resolve problems.
 
 
 
@@ -40,7 +40,11 @@ INSTALLED_APPS += (
 SLURM:
 
 1. Install slurm command line
-2. Test: sudo -uslurm /usr/local/slurm/latest/bin/sacctmgr -ip
+2. Add to /etc/sudoers:
+
+www-data ALL=(slurm) NOPASSWD: /usr/local/slurm/latest/bin/sacctmgr
+
+2. Test as www-data: sudo -uslurm /usr/local/slurm/latest/bin/sacctmgr -ip
 3. Install these files in python path.
 4. In /etc/karaage/global_settings.py add:
 
@@ -48,4 +52,4 @@ INSTALLED_APPS += (
     'kglimits.slurm',
 )
 
-5. Test and fix breakage.
+5. Test and fix breakage. Log file /tmp/slurm.log will help resolve problems.
