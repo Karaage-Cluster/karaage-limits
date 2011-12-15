@@ -77,7 +77,7 @@ def read_gold_output(command):
         raise subprocess.CalledProcessError(retcode, command)
 
     if len(headers) == 0:
-        raise RuntimeError("Command '%s' didn't return any headers."%command)
+        log("Command '%s' didn't return any headers."%command)
 
     log("Returned: %d (good)"%(retcode))
     return results
