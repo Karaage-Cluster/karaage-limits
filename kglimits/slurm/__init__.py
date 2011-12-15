@@ -60,12 +60,6 @@ def read_slurm_output(command):
 
     for row in reader:
         print >>logfile, row
-        name = row[0].lower()
-
-        if name in results:
-            log(None)
-            raise RuntimeError("We found name '%s' returned from '%s' multiple times."%(name,command))
-
         this_row = {}
 
         i = 0
