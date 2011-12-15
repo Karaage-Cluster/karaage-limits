@@ -20,6 +20,10 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
+    c = [ "%s/%s"%(gold,command[0]) ]
+    c.extend(command[1:])
+    command = c
+
     log("Call: %s"%(" ".join(command)))
     retcode = subprocess.call(command,stdout=logfile,stderr=logfile)
 
@@ -37,6 +41,10 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Gold
 def read_gold_output(command):
+    c = [ "%s/%s"%(gold,command[0]) ]
+    c.extend(command[1:])
+    command = c
+
     log("Call: %s"%(" ".join(command)))
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=logfile)
 
@@ -77,7 +85,7 @@ def read_gold_output(command):
 
 # Get the user details from Gold
 def get_gold_user(username):
-    cmd = [ "%s/glsuser"%(gold), "-u", username, "--raw" ]
+    cmd = [ "glsuser", "-u", username, "--raw" ]
     results = read_gold_output(cmd)
 
     username = username.lower()
@@ -90,13 +98,13 @@ def get_gold_user(username):
 
 # Get the project details from Gold
 def get_gold_user_balance(username):
-    cmd = [ "%s/gbalance"%(gold), "-u", username, "--raw" ]
+    cmd = [ "gbalance", "-u", username, "--raw" ]
     results = read_gold_output(cmd)
     return results
 
 # Get the project details from Gold
 def get_gold_project(projectname):
-    cmd = [ "%s/glsproject"%(gold), "-p", projectname, "--raw" ]
+    cmd = [ "glsproject", "-p", projectname, "--raw" ]
     results = read_gold_output(cmd)
 
     projectname = projectname.lower()
