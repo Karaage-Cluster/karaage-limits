@@ -93,8 +93,7 @@ def get_slurm_user(username):
         raise RuntimeError("Command returned multiple results for '%s'."%username)
 
     the_result = results[0]
-    username = username.lower()
-    if username != the_result["User"]:
+    if username.lower() != the_result["User"]:
         raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_result["User"]))
 
     return the_result
@@ -110,8 +109,7 @@ def get_slurm_project(projectname):
         raise RuntimeError("Command returned multiple results for '%s'."%projectname)
 
     the_result = results[0]
-    projectname = projectname.lower()
-    if projectname != the_result["Account"]:
+    if projectname.lower() != the_result["Account"]:
         raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_result["Account"]))
 
     return the_result
