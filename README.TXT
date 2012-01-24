@@ -14,7 +14,7 @@ ln -s /usr/local/src/karaage-limits/kglimits /usr/local/lib/python2.5/site-packa
 ln -s /usr/local/src/karaage-limits/kglimits /usr/local/lib/python2.6/dist-packages/kglimits
 3. Test, at command prompt.
 
-python
+kg-manage shell
 import kglimits.gold
 import kglimits.slurm
 
