@@ -98,7 +98,7 @@ def get_gold_user(username):
 
     return the_result
 
-# Get the project details from Gold
+# Get the user balance details from Gold
 def get_gold_user_balance(username):
     cmd = [ "gbalance", "-u", username, "--raw" ]
     results = read_gold_output(cmd)
