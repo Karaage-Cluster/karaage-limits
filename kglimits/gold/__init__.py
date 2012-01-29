@@ -162,18 +162,18 @@ def account_saved(sender, instance, created, **kwargs):
         # date_deleted is not set, user should exist
         log("account is active")
         if gold_user is None:
-            call(["%s/gmkuser"%(gold),"-A","-p",default_project_name,"-u",username])
+            call(["gmkuser","-A","-p",default_project_name,"-u",username])
         else:
-            call(["%s/gchuser"%(gold),"-p",default_project_name,"-u",username])
+            call(["gchuser","-p",default_project_name,"-u",username])
 
         for project in instance.user.project_set.all():
-            call(["%s/gchproject"%(gold),"--addUsers",username,"-p",project.pid],ignore_errors=[74])
+            call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
     else:
         # date_deleted is not set, user should not exist
         log("account is not active")
         if gold_user is not None:
             # delete gold user if account marked as deleted
-            call(["%s/grmuser"%(gold),"-u",username],ignore_errors=[8])
+            call(["grmuser","-u",username],ignore_errors=[8])
 
     log(None)
     return
@@ -187,7 +187,7 @@ def account_deleted(sender, instance, **kwargs):
 
     gold_user = get_gold_user(username)
     if gold_user is not None:
-        call(["%s/grmuser"%(gold),"-u",username],ignore_errors=[8])
+        call(["grmuser","-u",username],ignore_errors=[8])
 
     log(None)
     return
@@ -209,13 +209,13 @@ def project_saved(sender, instance, created, **kwargs):
         log("project is active")
         gold_project = get_gold_project(pid)
         if gold_project is None:
-            call(["%s/gmkproject"%(gold),"-p",pid,"-u","MEMBERS"])
+            call(["gmkproject","-p",pid,"-u","MEMBERS"])
     else:
         # project is deleted
         log("project is not active")
         gold_project = get_gold_project(pid)
         if gold_project is not None:
-            call(["%s/grmproject"%(gold),"-p",pid])
+            call(["grmproject","-p",pid])
 
     log(None)
     return
@@ -229,7 +229,7 @@ def project_deleted(sender, instance, **kwargs):
 
     gold_project = get_gold_project(pid)
     if gold_project is not None:
-        call(["%s/grmproject"%(gold),"-p",pid])
+        call(["grmproject","-p",pid])
 
     log(None)
     return
@@ -249,7 +249,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
                     log("add user '%s' to project '%s'"%(username,projectname))
-                    call(["%s/gchproject"%(gold),"--addUsers",username,"-p",projectname],ignore_errors=[74])
+                    call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
         else:
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
@@ -259,7 +259,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
                     log("add user '%s' to project '%s'"%(username,projectname))
-                    call(["%s/gchproject"%(gold),"--addUsers",username,"-p",projectname],ignore_errors=[74])
+                    call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
 
     elif action == "post_remove":
         if reverse:
@@ -271,7 +271,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
                     log("delete user '%s' to project '%s'"%(username,projectname))
-                    call(["%s/gchproject"%(gold),"--delUsers",username,"-p",projectname])
+                    call(["gchproject","--delUsers",username,"-p",projectname])
         else:
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
@@ -281,7 +281,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
                     log("delete user '%s' to project '%s'"%(username,projectname))
-                    call(["%s/gchproject"%(gold),"--delUsers",username,"-p",projectname])
+                    call(["gchproject","--delUsers",username,"-p",projectname])
 
     elif action == "post_clear":
         if reverse:
@@ -292,14 +292,14 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projects = get_gold_projects_in_user(username)
             for projectname in projects:
                 log("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
-                call(["%s/gchproject"%(gold),"--delUsers",username,"-p",projectname])
+                call(["gchproject","--delUsers",username,"-p",projectname])
         else:
             # FIXME! get_gold_users_in_project doesn't return all users in project
             projectname = instance.pid
             users = get_gold_users_in_project(projectname)
             for username in users:
                 log("remove project '%s' all users - now processing user '%s'"%(username, projectname))
-                call(["%s/gchproject"%(gold),"--delUsers",username,"-p",projectname])
+                call(["gchproject","--delUsers",username,"-p",projectname])
 
     log(None)
     return
