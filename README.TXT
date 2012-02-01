@@ -1,4 +1,6 @@
-COMMON INSTRUCTIONS:
+# Instructions
+
+## Common instructions
 
 1. Install this project under /usr/local/src/
 2. Create symlink, depends on python version.
@@ -12,6 +14,7 @@ exit()
 
 ln -s /usr/local/src/karaage-limits/kglimits /usr/local/lib/python2.5/site-packages/kglimits
 ln -s /usr/local/src/karaage-limits/kglimits /usr/local/lib/python2.6/dist-packages/kglimits
+
 3. Test, at command prompt.
 
 kg-manage shell
@@ -21,7 +24,9 @@ import kglimits.slurm
 
 
 
-GOLD:
+## Gold instructions
+
+Skip this section if not using gold.
 
 1. Install gold command line.
 2. Ensure gold installed under /usr/local/gold/bin/ and works as www-data user.
@@ -37,7 +42,9 @@ INSTALLED_APPS += (
 
 
 
-SLURM:
+## Slurm instructions
+
+Skip this section if not using slurm.
 
 1. Install slurm command line
 2. Add to /etc/sudoers:
