@@ -150,9 +150,13 @@ def get_gold_projects_in_user(username):
 
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
-    default_project_name = instance.default_project.pid
     username = instance.username
     log("account_saved '%s','%s'"%(username,created))
+
+    # retrieve default project, if there is one
+    default_project_name = None
+    if instance.default_project is not None:
+        default_project_name = instance.default_project.pid
 
     # account created
     # account updated
@@ -161,11 +165,18 @@ def account_saved(sender, instance, created, **kwargs):
     if instance.date_deleted is None:
         # date_deleted is not set, user should exist
         log("account is active")
-        if gold_user is None:
-            call(["gmkuser","-A","-p",default_project_name,"-u",username])
-        else:
-            call(["gchuser","-p",default_project_name,"-u",username])
 
+        # create user if doesn't exist
+        if gold_user is None:
+            call(["gmkuser","-A","-u",username])
+
+        # set default project
+        if default_project_name is not None:
+            call(["gchuser","-p",default_project_name,"-u",username])
+        # else
+        #   FIXME! need to delete default project
+
+        # add rest of projects user belongs to
         for project in instance.user.project_set.all():
             call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
     else:
