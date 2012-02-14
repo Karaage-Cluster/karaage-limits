@@ -6,6 +6,7 @@ import subprocess
 import csv
 
 slurm = "/usr/local/slurm/latest/bin/sacctmgr"
+slurm_default_project = "default"
 
 import sys
 logfile = open('/tmp/slurm.log', 'a')
@@ -135,9 +136,13 @@ def get_slurm_projects_in_user(username):
 
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
-    default_project_name = instance.default_project.pid
     username = instance.username
     log("account_saved '%s','%s'"%(username,created))
+
+    # retrieve default project, or use default value if none
+    default_project_name = slurm_default_project
+    if instance.default_project is not None:
+        default_project_name = instance.default_project.pid
 
     # account created
     # account updated
@@ -146,11 +151,15 @@ def account_saved(sender, instance, created, **kwargs):
     if instance.date_deleted is None:
         # date_deleted is not set, user should exist
         log("account is active")
+
         if slurm_user is None:
+            # create user if doesn't exist
             call(["add","user","accounts=%s"%default_project_name,"defaultaccount=%s"%default_project_name,"name=%s"%username])
         else:
+            # or just set default project
             call(["modify","user","set","defaultaccount=%s"%default_project_name,"where","name=%s"%username])
 
+        # add rest of projects user belongs to
         for project in instance.user.project_set.all():
             call(["add","user","name=%s"%username,"accounts=%s"%project.pid])
     else:
