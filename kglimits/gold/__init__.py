@@ -5,7 +5,7 @@ from datetime import datetime
 import subprocess
 import csv
 
-gold = "/usr/local/gold/bin"
+gold_path = "/usr/local/gold/bin"
 gold_default_project = "default"
 
 import sys
@@ -21,7 +21,7 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
-    c = [ "%s/%s"%(gold,command[0]) ]
+    c = [ "%s/%s"%(gold_path,command[0]) ]
     c.extend(command[1:])
     command = c
 
@@ -42,7 +42,7 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Gold
 def read_gold_output(command):
-    c = [ "%s/%s"%(gold,command[0]) ]
+    c = [ "%s/%s"%(gold_path,command[0]) ]
     c.extend(command[1:])
     command = c
 

@@ -5,7 +5,7 @@ from datetime import datetime
 import subprocess
 import csv
 
-slurm = "/usr/local/slurm/latest/bin/sacctmgr"
+slurm_path = "/usr/local/slurm/latest/bin/sacctmgr"
 slurm_default_project = "default"
 
 import sys
@@ -21,7 +21,7 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
-    c = [ "sudo", "-uslurm", slurm, "-ip" ]
+    c = [ "sudo", "-uslurm", slurm_path, "-ip" ]
     c.extend(command)
     command = c
 
@@ -42,7 +42,7 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Slurm
 def read_slurm_output(command):
-    c = [ "sudo", "-uslurm", slurm, "-ip" ]
+    c = [ "sudo", "-uslurm", slurm_path, "-ip" ]
     c.extend(command)
     command = c
 
