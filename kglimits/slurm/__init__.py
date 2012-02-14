@@ -166,7 +166,7 @@ def account_saved(sender, instance, created, **kwargs):
         # date_deleted is not set, user should not exist
         log("account is not active")
         if slurm_user is not None:
-            # delete slurm user if account marked as deleted
+            # delete Slurm user if account marked as deleted
             call(["delete","user","name=%s"%username])
 
     log(None)
@@ -235,7 +235,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     if action == "post_add":
         if reverse:
             username = instance.username
-            # If slurm user does not exist, there is nothing for us to do.
+            # If Slurm user does not exist, there is nothing for us to do.
             # Slurm account may not be created yet or it may have been deleted.
             slurm_user = get_slurm_user(username)
             if slurm_user is not None:
@@ -248,7 +248,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If slurm user does not exist, there is nothing for us to do.
+                # If Slurm user does not exist, there is nothing for us to do.
                 # Slurm account may not be created yet or it may have been deleted.
                 slurm_user = get_slurm_user(username)
                 if slurm_user is not None:
@@ -258,7 +258,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     elif action == "post_remove":
         if reverse:
             username = instance.username
-            # If slurm user does not exist, there is nothing for us to do.
+            # If Slurm user does not exist, there is nothing for us to do.
             # Slurm account may not be created yet or it may have been deleted.
             slurm_user = get_slurm_user(username)
             if slurm_user is not None:
@@ -270,7 +270,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If slurm user does not exist, there is nothing for us to do.
+                # If Slurm user does not exist, there is nothing for us to do.
                 # Slurm account may not be created yet or it may have been deleted.
                 slurm_user = get_slurm_user(username)
                 if slurm_user is not None:

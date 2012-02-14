@@ -181,7 +181,7 @@ def account_saved(sender, instance, created, **kwargs):
         # date_deleted is not set, user should not exist
         log("account is not active")
         if gold_user is not None:
-            # delete gold user if account marked as deleted
+            # delete Gold user if account marked as deleted
             call(["grmuser","-u",username],ignore_errors=[8])
 
     log(None)
@@ -250,7 +250,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     if action == "post_add":
         if reverse:
             username = instance.username
-            # If gold user does not exist, there is nothing for us to do.
+            # If Gold user does not exist, there is nothing for us to do.
             # Gold account may not be created yet or it may have been deleted.
             gold_user = get_gold_user(username)
             if gold_user is not None:
@@ -263,7 +263,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If gold user does not exist, there is nothing for us to do.
+                # If Gold user does not exist, there is nothing for us to do.
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
@@ -273,7 +273,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     elif action == "post_remove":
         if reverse:
             username = instance.username
-            # If gold user does not exist, there is nothing for us to do.
+            # If Gold user does not exist, there is nothing for us to do.
             # Gold account may not be created yet or it may have been deleted.
             gold_user = get_gold_user(username)
             if gold_user is not None:
@@ -285,7 +285,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If gold user does not exist, there is nothing for us to do.
+                # If Gold user does not exist, there is nothing for us to do.
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
