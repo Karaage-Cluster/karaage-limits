@@ -130,7 +130,7 @@ def get_gold_users_in_project(projectname):
     if gold_project is None:
         log("error '%s'"%(projectname))
         log(None)
-        raise RuntimeError("Project '%s' does not exist in gold"%(projectname))
+        raise RuntimeError("Project '%s' does not exist in Gold"%(projectname))
 
     if gold_project["Users"] == "":
         return []
@@ -142,7 +142,7 @@ def get_gold_projects_in_user(username):
     if gold_balance is None:
         log("error '%s'"%(username))
         log(None)
-        raise RuntimeError("User '%s' does not exist in gold"%(username))
+        raise RuntimeError("User '%s' does not exist in Gold"%(username))
 
     projects = []
     for v in gold_balance:
