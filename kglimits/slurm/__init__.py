@@ -5,8 +5,15 @@ from datetime import datetime
 import subprocess
 import csv
 
-slurm_path = "/usr/local/slurm/latest/bin/sacctmgr"
-slurm_default_project = "default"
+from django.conf import settings
+
+if not hasattr(settings, 'SLURM_PATH'):
+    settings.SLURM_PATH = "/usr/local/slurm/bin"
+if not hasattr(settings, 'SLURM_DEFAULT_PROJECT'):
+    settings.SLURM_DEFAULT_PROJECT = "default"
+
+slurm_path = settings.SLURM_PATH
+slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
 import sys
 logfile = open('/tmp/slurm.log', 'a')

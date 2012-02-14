@@ -5,8 +5,15 @@ from datetime import datetime
 import subprocess
 import csv
 
-gold_path = "/usr/local/gold/bin"
-gold_default_project = "default"
+from django.conf import settings
+
+if not hasattr(settings, 'GOLD_PATH'):
+    settings.GOLD_PATH = "/usr/local/gold/bin"
+if not hasattr(settings, 'GOLD_DEFAULT_PROJECT'):
+    settings.GOLD_DEFAULT_PROJECT = "default"
+
+gold_path = settings.GOLD_PATH
+gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 import sys
 logfile = open('/tmp/gold.log', 'a')
