@@ -5,7 +5,15 @@ from datetime import datetime
 import subprocess
 import csv
 
-gold = "/usr/local/gold/bin"
+from django.conf import settings
+
+if not hasattr(settings, 'GOLD_PATH'):
+    settings.GOLD_PATH = "/usr/local/gold/bin"
+if not hasattr(settings, 'GOLD_DEFAULT_PROJECT'):
+    settings.GOLD_DEFAULT_PROJECT = "default"
+
+gold_path = settings.GOLD_PATH
+gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 import sys
 logfile = open('/tmp/gold.log', 'a')
@@ -20,7 +28,7 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
-    c = [ "%s/%s"%(gold,command[0]) ]
+    c = [ "%s/%s"%(gold_path,command[0]) ]
     c.extend(command[1:])
     command = c
 
@@ -41,7 +49,7 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Gold
 def read_gold_output(command):
-    c = [ "%s/%s"%(gold,command[0]) ]
+    c = [ "%s/%s"%(gold_path,command[0]) ]
     c.extend(command[1:])
     command = c
 
@@ -129,7 +137,7 @@ def get_gold_users_in_project(projectname):
     if gold_project is None:
         log("error '%s'"%(projectname))
         log(None)
-        raise RuntimeError("Project '%s' does not exist in gold"%(projectname))
+        raise RuntimeError("Project '%s' does not exist in Gold"%(projectname))
 
     if gold_project["Users"] == "":
         return []
@@ -141,7 +149,7 @@ def get_gold_projects_in_user(username):
     if gold_balance is None:
         log("error '%s'"%(username))
         log(None)
-        raise RuntimeError("User '%s' does not exist in gold"%(username))
+        raise RuntimeError("User '%s' does not exist in Gold"%(username))
 
     projects = []
     for v in gold_balance:
@@ -150,9 +158,13 @@ def get_gold_projects_in_user(username):
 
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
-    default_project_name = instance.default_project.pid
     username = instance.username
     log("account_saved '%s','%s'"%(username,created))
+
+    # retrieve default project, or use default value if none
+    default_project_name = gold_default_project
+    if instance.default_project is not None:
+        default_project_name = instance.default_project.pid
 
     # account created
     # account updated
@@ -161,18 +173,22 @@ def account_saved(sender, instance, created, **kwargs):
     if instance.date_deleted is None:
         # date_deleted is not set, user should exist
         log("account is active")
+
         if gold_user is None:
+            # create user if doesn't exist
             call(["gmkuser","-A","-p",default_project_name,"-u",username])
         else:
+            # or just set default project
             call(["gchuser","-p",default_project_name,"-u",username])
 
+        # add rest of projects user belongs to
         for project in instance.user.project_set.all():
             call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
     else:
         # date_deleted is not set, user should not exist
         log("account is not active")
         if gold_user is not None:
-            # delete gold user if account marked as deleted
+            # delete Gold user if account marked as deleted
             call(["grmuser","-u",username],ignore_errors=[8])
 
     log(None)
@@ -241,7 +257,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     if action == "post_add":
         if reverse:
             username = instance.username
-            # If gold user does not exist, there is nothing for us to do.
+            # If Gold user does not exist, there is nothing for us to do.
             # Gold account may not be created yet or it may have been deleted.
             gold_user = get_gold_user(username)
             if gold_user is not None:
@@ -254,7 +270,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If gold user does not exist, there is nothing for us to do.
+                # If Gold user does not exist, there is nothing for us to do.
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
@@ -264,7 +280,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     elif action == "post_remove":
         if reverse:
             username = instance.username
-            # If gold user does not exist, there is nothing for us to do.
+            # If Gold user does not exist, there is nothing for us to do.
             # Gold account may not be created yet or it may have been deleted.
             gold_user = get_gold_user(username)
             if gold_user is not None:
@@ -276,7 +292,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
                 username = user.username
-                # If gold user does not exist, there is nothing for us to do.
+                # If Gold user does not exist, there is nothing for us to do.
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
