@@ -8,7 +8,7 @@ import csv
 from django.conf import settings
 
 if not hasattr(settings, 'SLURM_PATH'):
-    settings.SLURM_PATH = "/usr/local/slurm/bin"
+    settings.SLURM_PATH = "/usr/local/slurm/latest/bin/sacctmgr"
 if not hasattr(settings, 'SLURM_DEFAULT_PROJECT'):
     settings.SLURM_DEFAULT_PROJECT = "default"
 
