@@ -7,11 +7,14 @@ import csv
 
 from django.conf import settings
 
+if not hasattr(settings, 'SLURM_PREFIX'):
+    settings.SLURM_PREFIX = [ "sudo", "-uslurm" ]
 if not hasattr(settings, 'SLURM_PATH'):
     settings.SLURM_PATH = "/usr/local/slurm/latest/bin/sacctmgr"
 if not hasattr(settings, 'SLURM_DEFAULT_PROJECT'):
     settings.SLURM_DEFAULT_PROJECT = "default"
 
+slurm_prefix = settings.SLURM_PREFIX
 slurm_path = settings.SLURM_PATH
 slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
@@ -28,7 +31,9 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
-    c = [ "sudo", "-uslurm", slurm_path, "-ip" ]
+    c = []
+    c.extend(slurm_prefix)
+    c.extend([ slurm_path, "-ip" ])
     c.extend(command)
     command = c
 
@@ -49,7 +54,9 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Slurm
 def read_slurm_output(command):
-    c = [ "sudo", "-uslurm", slurm_path, "-ip" ]
+    c = []
+    c.extend(slurm_prefix)
+    c.extend([ slurm_path, "-ip" ])
     c.extend(command)
     command = c
 

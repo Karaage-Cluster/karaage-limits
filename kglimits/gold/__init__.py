@@ -7,11 +7,14 @@ import csv
 
 from django.conf import settings
 
+if not hasattr(settings, 'GOLD_PREFIX'):
+    settings.GOLD_PREFIX = []
 if not hasattr(settings, 'GOLD_PATH'):
     settings.GOLD_PATH = "/usr/local/gold/bin"
 if not hasattr(settings, 'GOLD_DEFAULT_PROJECT'):
     settings.GOLD_DEFAULT_PROJECT = "default"
 
+gold_prefix = settings.GOLD_PREFIX
 gold_path = settings.GOLD_PATH
 gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
@@ -28,7 +31,9 @@ def log(msg):
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
-    c = [ "%s/%s"%(gold_path,command[0]) ]
+    c = []
+    c.extend(gold_prefix)
+    c.append("%s/%s"%(gold_path,command[0]))
     c.extend(command[1:])
     command = c
 
@@ -49,7 +54,9 @@ def call(command, ignore_errors=[]):
 
 # Read CSV delimited input from Gold
 def read_gold_output(command):
-    c = [ "%s/%s"%(gold_path,command[0]) ]
+    c = []
+    c.extend(gold_prefix)
+    c.append("%s/%s"%(gold_path,command[0]))
     c.extend(command[1:])
     command = c
 
