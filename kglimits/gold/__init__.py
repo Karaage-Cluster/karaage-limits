@@ -21,9 +21,6 @@ gold_prefix = settings.GOLD_PREFIX
 gold_path = settings.GOLD_PATH
 gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
-import django
-if django.VERSION < (1, 3):
-    logging.config.dictConfig(settings.LOGGING)
 logger = logging.getLogger(__name__)
 
 # Call remote command with logging

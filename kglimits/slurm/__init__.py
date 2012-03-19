@@ -21,9 +21,6 @@ slurm_prefix = settings.SLURM_PREFIX
 slurm_path = settings.SLURM_PATH
 slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
-import django
-if django.VERSION < (1, 3):
-    logging.config.dictConfig(settings.LOGGING)
 logger = logging.getLogger(__name__)
 
 # Call remote command with logging
