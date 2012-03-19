@@ -1,4 +1,5 @@
 from django.db.models import signals
+from karaage import people
 from karaage import machines
 from karaage import projects
 from datetime import datetime
@@ -164,6 +165,21 @@ def get_gold_projects_in_user(username):
     for v in gold_balance:
         projects.append(v["Name"])
     return projects
+
+# Called when person is created/updated
+def person_saved(sender, instance, created, **kwargs):
+    logger.debug("person_saved '%s','%s'"%(instance.username,created))
+
+    # update user meta information
+    if instance.is_active:
+        for ua in instance.useraccount_set.filter(date_deleted__isnull=True):
+            call(["gchuser","-n",instance.get_full_name(),"-u",ua.username])
+            call(["gchuser","-E",instance.email,"-u",ua.username])
+
+    logger.debug("returning")
+    return
+
+signals.post_save.connect(person_saved, sender=people.models.Person)
 
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
