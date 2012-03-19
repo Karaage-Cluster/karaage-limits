@@ -190,6 +190,10 @@ def account_saved(sender, instance, created, **kwargs):
             # or just set default project
             call(["gchuser","-p",default_project_name,"-u",username])
 
+        # update user meta information
+        call(["gchuser","-n",instance.user.get_fullname(),"-u",username])
+        call(["gchuser","-E",instance.user.email,"-u",username])
+
         # add rest of projects user belongs to
         for project in instance.user.project_set.all():
             call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
@@ -235,6 +239,10 @@ def project_saved(sender, instance, created, **kwargs):
         gold_project = get_gold_project(pid)
         if gold_project is None:
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
+
+        # update project meta information
+        call(["gchproject","-d",instance.description,"-p",projectname])
+        #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",projectname])
     else:
         # project is deleted
         logger.debug("project is not active")

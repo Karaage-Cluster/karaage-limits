@@ -178,6 +178,8 @@ def account_saved(sender, instance, created, **kwargs):
             # or just set default project
             call(["modify","user","set","defaultaccount=%s"%default_project_name,"where","name=%s"%username])
 
+        # update user meta information
+
         # add rest of projects user belongs to
         for project in instance.user.project_set.all():
             call(["add","user","name=%s"%username,"accounts=%s"%project.pid])
@@ -223,6 +225,10 @@ def project_saved(sender, instance, created, **kwargs):
         slurm_project = get_slurm_project(pid)
         if slurm_project is None:
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
+
+        # update project meta information
+        call(["modify","account","set","Description=%s"%instance.description,"where","name=%s"%pid])
+        call(["modify","account","set","Organization=%s"%instance.institute.name,"where","name=%s"%pid])
     else:
         # project is deleted
         logger.debug("project is not active")
