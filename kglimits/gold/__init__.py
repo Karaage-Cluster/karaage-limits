@@ -254,8 +254,8 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        call(["gchproject","-d",instance.description,"-p",projectname])
-        #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",projectname])
+        call(["gchproject","-d",instance.description,"-p",pid])
+        #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",pid])
     else:
         # project is deleted
         logger.debug("project is not active")
