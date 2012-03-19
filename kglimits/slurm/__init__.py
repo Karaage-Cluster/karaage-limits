@@ -24,11 +24,13 @@ slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 logger = logging.getLogger(__name__)
 
 def filter_string(value):
+    if value is None:
+        value = ""
+    value = value.replace("\n"," ")
+    value = value.replace("\t"," ")
+    value = value.strip()
     # Used for stripping non-ascii characters
-    t = "".join(map(chr, range(256)))
-    d = "".join(map(chr, range(128,256)))
-    d = d + "".join(map(chr, range(0,32)))
-    return value.replace("\n"," ").translate(t,d).strip()
+    return ''.join(c for c in value if ord(c) > 31)
 
 def truncate(value, arg):
     """
