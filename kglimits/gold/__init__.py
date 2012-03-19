@@ -267,7 +267,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        description = truncate(instance.description, 40)
+        description = truncate(instance.description, 40).replace("\n"," ")
         call(["gchproject","-d",description,"-p",pid])
         #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",pid])
     else:

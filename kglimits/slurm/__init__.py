@@ -252,7 +252,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
 
         # update project meta information
-        description = truncate(instance.description, 40)
+        description = truncate(instance.description, 40).replace("\n"," ")
         call(["modify","account","set","Description=%s"%description,"where","name=%s"%pid])
         call(["modify","account","set","Organization=%s"%instance.institute.name,"where","name=%s"%pid])
     else:
