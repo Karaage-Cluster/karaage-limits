@@ -28,6 +28,7 @@ def filter_string(value):
     t = "".join(map(chr, range(256)))
     d = "".join(map(chr, range(128,256)))
     d = d + "".join(map(chr, range(0,32)))
+    d = d + "'\""
     return value.replace("\n"," ").translate(t,d).strip()
 
 def truncate(value, arg):
