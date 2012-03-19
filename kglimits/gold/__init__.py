@@ -23,6 +23,13 @@ gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+def filter_string(value):
+    # Used for stripping non-ascii characters
+    t = "".join(map(chr, range(256)))
+    d = "".join(map(chr, range(128,256)))
+    d = d + "".join(map(chr, range(0,32)))
+    return value.replace("\n"," ").translate(t,d).strip()
+
 def truncate(value, arg):
     """
     Truncates a string after a given number of chars  
@@ -267,7 +274,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        description = truncate(instance.description, 40).replace("\n"," ")
+        description = truncate(filter_string(instance.description), 40)
         call(["gchproject","-d",description,"-p",pid])
         #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",pid])
     else:

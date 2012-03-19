@@ -23,6 +23,13 @@ slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+def filter_string(value):
+    # Used for stripping non-ascii characters
+    t = "".join(map(chr, range(256)))
+    d = "".join(map(chr, range(128,256)))
+    d = d + "".join(map(chr, range(0,32)))
+    return value.replace("\n"," ").translate(t,d).strip()
+
 def truncate(value, arg):
     """
     Truncates a string after a given number of chars  
@@ -252,7 +259,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
 
         # update project meta information
-        description = truncate(instance.description, 40).replace("\n"," ")
+        description = truncate(filter_string(instance.description), 40)
         call(["modify","account","set","Description=%s"%description,"where","name=%s"%pid])
         call(["modify","account","set","Organization=%s"%instance.institute.name,"where","name=%s"%pid])
     else:
