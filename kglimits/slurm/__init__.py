@@ -23,6 +23,19 @@ slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+def truncate(value, arg):
+    """
+    Truncates a string after a given number of chars  
+    Argument: Number of chars to truncate after
+    """
+    length = int(arg)
+    if value is None:
+        value = ""
+    if (len(value) > length):
+        return value[:length] + "..."
+    else:
+        return value
+
 # Call remote command with logging
 def call(command, ignore_errors=[]):
     c = []
@@ -239,9 +252,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
 
         # update project meta information
-        description = instance.description
-        if description is None:
-            description = ""
+        description = truncate(instance.description, 40)
         call(["modify","account","set","Description=%s"%description,"where","name=%s"%pid])
         call(["modify","account","set","Organization=%s"%instance.institute.name,"where","name=%s"%pid])
     else:

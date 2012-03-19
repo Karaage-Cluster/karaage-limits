@@ -23,6 +23,19 @@ gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+def truncate(value, arg):
+    """
+    Truncates a string after a given number of chars  
+    Argument: Number of chars to truncate after
+    """
+    length = int(arg)
+    if value is None:
+        value = ""
+    if (len(value) > length):
+        return value[:length] + "..."
+    else:
+        return value
+
 # Call remote command with logging
 def call(command, ignore_errors=[]):
     c = []
@@ -254,9 +267,7 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        description = instance.description
-        if description is None:
-            description = ""
+        description = truncate(instance.description, 40)
         call(["gchproject","-d",description,"-p",pid])
         #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",pid])
     else:
