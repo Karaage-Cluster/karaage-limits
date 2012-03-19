@@ -7,6 +7,8 @@ import csv
 
 from django.conf import settings
 
+import logging
+
 if not hasattr(settings, 'SLURM_PREFIX'):
     settings.SLURM_PREFIX = [ "sudo", "-uslurm" ]
 if not hasattr(settings, 'SLURM_PATH'):
@@ -18,16 +20,10 @@ slurm_prefix = settings.SLURM_PREFIX
 slurm_path = settings.SLURM_PATH
 slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
-import sys
-logfile = open('/tmp/slurm.log', 'a')
-
-def log(msg):
-    if msg is None:
-        print >>logfile, ""
-        logfile.flush()
-    else:
-        print >>logfile, "%s: %s"%(datetime.now(),msg)
-        logfile.flush()
+import django
+if django.VERSION < (1, 3):
+    logging.config.dictConfig(settings.LOGGING)
+logger = logging.getLogger(__name__)
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
@@ -37,19 +33,20 @@ def call(command, ignore_errors=[]):
     c.extend(command)
     command = c
 
-    log("Call: %s"%(" ".join(command)))
-    retcode = subprocess.call(command,stdout=logfile,stderr=logfile)
+    logger.debug("Cmd %s"%command)
+    null = open('/dev/null', 'w')
+    retcode = subprocess.call(command,stdout=null,stderr=null)
+    null.close()
 
     if retcode in ignore_errors:
-        log("Returned: %d (ignored)"%(retcode))
+        logger.debug("<-- Cmd %s returned %d (ignored)"%(command,retcode))
         return
 
     if retcode:
-        log("Returned: %d (error)"%(retcode))
-        log(None)
+        logger.error("<-- Cmd %s returned: %d (error)"%(command,retcode))
         raise subprocess.CalledProcessError(retcode, command)
 
-    log("Returned: %d (good)"%(retcode))
+    logger.debug("<-- Returned %d (good)"%(retcode))
     return
 
 # Read CSV delimited input from Slurm
@@ -60,21 +57,23 @@ def read_slurm_output(command):
     c.extend(command)
     command = c
 
-    log("Call: %s"%(" ".join(command)))
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=logfile)
+    logger.debug("Cmd %s"%command)
+    null = open('/dev/null', 'w')
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=null)
+    null.close()
 
     results = []
     reader = csv.reader(p.stdout,delimiter="|")
 
     try:
         headers = reader.next()
-        print >>logfile, headers
+        logger.debug("<-- headers %s"%headers)
     except StopIteration, e:
-        log("headers not found")
+        logger.debug("Cmd %s headers not found"%command)
         headers = []
 
     for row in reader:
-        print >>logfile, row
+        logger.debug("<-- row %s"%row)
         this_row = {}
 
         i = 0
@@ -87,14 +86,14 @@ def read_slurm_output(command):
 
     retcode = p.wait()
     if retcode != 0:
-        log("Returned: %d (error)"%(retcode))
-        log(None)
+        logger.error("<-- Cmd %s returned %d (error)"%(command,retcode))
         raise subprocess.CalledProcessError(retcode, command)
 
     if len(headers) == 0:
-        raise RuntimeError("Command '%s' didn't return any headers."%command)
+        logger.error("Cmd %s didn't return any headers."%command)
+        raise RuntimeError("Cmd %s didn't return any headers."%command)
 
-    log("Returned: %d (good)"%(retcode))
+    logger.debug("<-- Returned: %d (good)"%(retcode))
     return results
 
 # Get the user details from Slurm
@@ -105,11 +104,14 @@ def get_slurm_user(username):
     if len(results) == 0:
         return None
     elif len(results) > 1:
+        logger.error("Command returned multiple results for '%s'."%username)
         raise RuntimeError("Command returned multiple results for '%s'."%username)
 
     the_result = results[0]
-    if username.lower() != the_result["User"]:
-        raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_result["User"]))
+    the_name = the_result["User"]
+    if username.lower() != the_name.lower():
+        logger.error("We expected username '%s' but got username '%s'."%(username,the_name))
+        raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_name))
 
     return the_result
 
@@ -121,11 +123,14 @@ def get_slurm_project(projectname):
     if len(results) == 0:
         return None
     elif len(results) > 1:
+        logger.error("Command returned multiple results for '%s'."%projectname)
         raise RuntimeError("Command returned multiple results for '%s'."%projectname)
 
     the_result = results[0]
-    if projectname.lower() != the_result["Account"]:
-        raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_result["Account"]))
+    the_project = the_result["Account"]
+    if projectname.lower() != the_project.lower():
+        logger.error("We expected projectname '%s' but got projectname '%s'."%(projectname,the_project))
+        raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_project))
 
     return the_result
 
@@ -151,7 +156,7 @@ def get_slurm_projects_in_user(username):
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
     username = instance.username
-    log("account_saved '%s','%s'"%(username,created))
+    logger.debug("account_saved '%s','%s'"%(username,created))
 
     # retrieve default project, or use default value if none
     default_project_name = slurm_default_project
@@ -164,7 +169,7 @@ def account_saved(sender, instance, created, **kwargs):
     slurm_user = get_slurm_user(username)
     if instance.date_deleted is None:
         # date_deleted is not set, user should exist
-        log("account is active")
+        logger.debug("account is active")
 
         if slurm_user is None:
             # create user if doesn't exist
@@ -178,18 +183,18 @@ def account_saved(sender, instance, created, **kwargs):
             call(["add","user","name=%s"%username,"accounts=%s"%project.pid])
     else:
         # date_deleted is not set, user should not exist
-        log("account is not active")
+        logger.debug("account is not active")
         if slurm_user is not None:
             # delete Slurm user if account marked as deleted
             call(["delete","user","name=%s"%username])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when account is deleted
 def account_deleted(sender, instance, **kwargs):
     username = instance.username
-    log("account_deleted '%s'"%(username))
+    logger.debug("account_deleted '%s'"%(username))
 
     # account deleted
 
@@ -197,7 +202,7 @@ def account_deleted(sender, instance, **kwargs):
     if slurm_user is not None:
         call(["delete","user","name=%s"%username])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Setup account hooks
@@ -207,31 +212,31 @@ signals.post_delete.connect(account_deleted, sender=machines.models.UserAccount)
 # Called when project is saved/updated
 def project_saved(sender, instance, created, **kwargs):
     pid = instance.pid
-    log("project_saved '%s','%s'"%(instance,created))
+    logger.debug("project_saved '%s','%s'"%(instance,created))
 
     # project created
     # project updated
 
     if instance.is_active:
         # project is not deleted
-        log("project is active")
+        logger.debug("project is active")
         slurm_project = get_slurm_project(pid)
         if slurm_project is None:
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
     else:
         # project is deleted
-        log("project is not active")
+        logger.debug("project is not active")
         slurm_project = get_slurm_project(pid)
         if slurm_project is not None:
             call(["delete","account","name=%s"%pid])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when project is deleted
 def project_deleted(sender, instance, **kwargs):
     pid = instance.pid
-    log("project_deleted '%s'"%(instance))
+    logger.debug("project_deleted '%s'"%(instance))
 
     # project deleted
 
@@ -239,12 +244,12 @@ def project_deleted(sender, instance, **kwargs):
     if slurm_project is not None:
         call(["delete","account","name=%s"%pid])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when m2m changed between user and project
 def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    log("user_project_changed '%s','%s','%s','%s','%s'"%(instance, action, reverse, model, pk_set))
+    logger.debug("user_project_changed '%s','%s','%s','%s','%s'"%(instance, action, reverse, model, pk_set))
 
     if action == "post_add":
         if reverse:
@@ -256,7 +261,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 username = slurm_user["Name"]
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
-                    log("add user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("add user '%s' to project '%s'"%(username,projectname))
                     call(["add","user","accounts=%s"%projectname,"name=%s"%username])
         else:
             projectname = instance.pid
@@ -266,7 +271,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 # Slurm account may not be created yet or it may have been deleted.
                 slurm_user = get_slurm_user(username)
                 if slurm_user is not None:
-                    log("add user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("add user '%s' to project '%s'"%(username,projectname))
                     call(["add","user","accounts=%s"%projectname,"name=%s"%username])
 
     elif action == "post_remove":
@@ -278,7 +283,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             if slurm_user is not None:
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
-                    log("delete user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("delete user '%s' to project '%s'"%(username,projectname))
                     call(["delete","user","name=%s"%username,"account=%s"%projectname])
         else:
             projectname = instance.pid
@@ -288,7 +293,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 # Slurm account may not be created yet or it may have been deleted.
                 slurm_user = get_slurm_user(username)
                 if slurm_user is not None:
-                    log("delete user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("delete user '%s' to project '%s'"%(username,projectname))
                     call(["delete","user","name=%s"%username,"account=%s"%projectname])
 
     elif action == "post_clear":
@@ -296,16 +301,16 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             username = instance.username
             projects = get_slurm_projects_in_user(username)
             for projectname in projects:
-                log("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
+                logger.debug("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
                 call(["delete","user","name=%s"%username,"account=%s"%projectname])
         else:
             projectname = instance.pid
             users = get_slurm_users_in_project(projectname)
             for username in users:
-                log("remove project '%s' all users - now processing user '%s'"%(username, projectname))
+                logger.debug("remove project '%s' all users - now processing user '%s'"%(username, projectname))
                 call(["delete","user","name=%s"%username,"account=%s"%projectname])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Setup project hooks

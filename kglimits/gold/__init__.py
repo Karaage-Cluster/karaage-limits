@@ -7,6 +7,8 @@ import csv
 
 from django.conf import settings
 
+import logging
+
 if not hasattr(settings, 'GOLD_PREFIX'):
     settings.GOLD_PREFIX = []
 if not hasattr(settings, 'GOLD_PATH'):
@@ -18,16 +20,10 @@ gold_prefix = settings.GOLD_PREFIX
 gold_path = settings.GOLD_PATH
 gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
-import sys
-logfile = open('/tmp/gold.log', 'a')
-
-def log(msg):
-    if msg is None:
-        print >>logfile, ""
-        logfile.flush()
-    else:
-        print >>logfile, "%s: %s"%(datetime.now(),msg)
-        logfile.flush()
+import django
+if django.VERSION < (1, 3):
+    logging.config.dictConfig(settings.LOGGING)
+logger = logging.getLogger(__name__)
 
 # Call remote command with logging
 def call(command, ignore_errors=[]):
@@ -37,19 +33,20 @@ def call(command, ignore_errors=[]):
     c.extend(command[1:])
     command = c
 
-    log("Call: %s"%(" ".join(command)))
-    retcode = subprocess.call(command,stdout=logfile,stderr=logfile)
+    logger.debug("Cmd %s"%command)
+    null = open('/dev/null', 'w')
+    retcode = subprocess.call(command,stdout=null,stderr=null)
+    null.close()
 
     if retcode in ignore_errors:
-        log("Returned: %d (ignored)"%(retcode))
+        logger.debug("<-- Cmd %s returned %d (ignored)"%(command,retcode))
         return
 
     if retcode:
-        log("Returned: %d (error)"%(retcode))
-        log(None)
+        logger.error("<-- Cmd %s returned: %d (error)"%(command,retcode))
         raise subprocess.CalledProcessError(retcode, command)
 
-    log("Returned: %d (good)"%(retcode))
+    logger.debug("<-- Returned %d (good)"%(retcode))
     return
 
 # Read CSV delimited input from Gold
@@ -60,21 +57,23 @@ def read_gold_output(command):
     c.extend(command[1:])
     command = c
 
-    log("Call: %s"%(" ".join(command)))
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=logfile)
+    logger.debug("Cmd %s"%command)
+    null = open('/dev/null', 'w')
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=null)
+    null.close()
 
     results = []
     reader = csv.reader(p.stdout,delimiter="|")
 
     try:
         headers = reader.next()
-        print >>logfile, headers
+        logger.debug("<-- headers %s"%headers)
     except StopIteration, e:
-        log("headers not found")
+        logger.debug("Cmd %s headers not found"%command)
         headers = []
 
     for row in reader:
-        print >>logfile, row
+        logger.debug("<-- row %s"%row)
         this_row = {}
 
         i = 0
@@ -87,14 +86,13 @@ def read_gold_output(command):
 
     retcode = p.wait()
     if retcode != 0:
-        log("Returned: %d (error)"%(retcode))
-        log(None)
+        logger.error("<-- Cmd %s returned %d (error)"%(command,retcode))
         raise subprocess.CalledProcessError(retcode, command)
 
     if len(headers) == 0:
-        log("Command '%s' didn't return any headers."%command)
+        logger.debug("Cmd %s didn't return any headers."%command)
 
-    log("Returned: %d (good)"%(retcode))
+    logger.debug("<-- Returned: %d (good)"%(retcode))
     return results
 
 # Get the user details from Gold
@@ -105,11 +103,14 @@ def get_gold_user(username):
     if len(results) == 0:
         return None
     elif len(results) > 1:
+        logger.error("Command returned multiple results for '%s'."%username)
         raise RuntimeError("Command returned multiple results for '%s'."%username)
 
     the_result = results[0]
-    if username.lower() != the_result["Name"].lower():
-        raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_result["User"]))
+    the_name = the_result["Name"]
+    if username.lower() != the_name.lower():
+        logger.error("We expected username '%s' but got username '%s'."%(username,the_name))
+        raise RuntimeError("We expected username '%s' but got username '%s'."%(username,the_name))
 
     return the_result
 
@@ -131,19 +132,21 @@ def get_gold_project(projectname):
     if len(results) == 0:
         return None
     elif len(results) > 1:
+        logger.error("Command returned multiple results for '%s'."%projectname)
         raise RuntimeError("Command returned multiple results for '%s'."%projectname)
 
     the_result = results[0]
-    if projectname.lower() != the_result["Name"].lower():
-        raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_result["Name"]))
+    the_project = the_result["Name"]
+    if projectname.lower() != the_project.lower():
+        logger.error("We expected projectname '%s' but got projectname '%s'."%(projectname,the_project))
+        raise RuntimeError("We expected projectname '%s' but got projectname '%s'."%(projectname,the_project))
 
     return the_result
 
 def get_gold_users_in_project(projectname):
     gold_project = get_gold_project(projectname)
     if gold_project is None:
-        log("error '%s'"%(projectname))
-        log(None)
+        logger.error("Project '%s' does not exist in Gold"%(projectname))
         raise RuntimeError("Project '%s' does not exist in Gold"%(projectname))
 
     if gold_project["Users"] == "":
@@ -154,8 +157,7 @@ def get_gold_users_in_project(projectname):
 def get_gold_projects_in_user(username):
     gold_balance = get_gold_user_balance(username)
     if gold_balance is None:
-        log("error '%s'"%(username))
-        log(None)
+        logger.error("User '%s' does not exist in Gold"%(username))
         raise RuntimeError("User '%s' does not exist in Gold"%(username))
 
     projects = []
@@ -166,7 +168,7 @@ def get_gold_projects_in_user(username):
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
     username = instance.username
-    log("account_saved '%s','%s'"%(username,created))
+    logger.debug("account_saved '%s','%s'"%(username,created))
 
     # retrieve default project, or use default value if none
     default_project_name = gold_default_project
@@ -179,7 +181,7 @@ def account_saved(sender, instance, created, **kwargs):
     gold_user = get_gold_user(username)
     if instance.date_deleted is None:
         # date_deleted is not set, user should exist
-        log("account is active")
+        logger.debug("account is active")
 
         if gold_user is None:
             # create user if doesn't exist
@@ -193,18 +195,18 @@ def account_saved(sender, instance, created, **kwargs):
             call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
     else:
         # date_deleted is not set, user should not exist
-        log("account is not active")
+        logger.debug("account is not active")
         if gold_user is not None:
             # delete Gold user if account marked as deleted
             call(["grmuser","-u",username],ignore_errors=[8])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when account is deleted
 def account_deleted(sender, instance, **kwargs):
     username = instance.username
-    log("account_deleted '%s'"%(username))
+    logger.debug("account_deleted '%s'"%(username))
 
     # account deleted
 
@@ -212,7 +214,7 @@ def account_deleted(sender, instance, **kwargs):
     if gold_user is not None:
         call(["grmuser","-u",username],ignore_errors=[8])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Setup account hooks
@@ -222,31 +224,31 @@ signals.post_delete.connect(account_deleted, sender=machines.models.UserAccount)
 # Called when project is saved/updated
 def project_saved(sender, instance, created, **kwargs):
     pid = instance.pid
-    log("project_saved '%s','%s'"%(instance,created))
+    logger.debug("project_saved '%s','%s'"%(instance,created))
 
     # project created
     # project updated
 
     if instance.is_active:
         # project is not deleted
-        log("project is active")
+        logger.debug("project is active")
         gold_project = get_gold_project(pid)
         if gold_project is None:
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
     else:
         # project is deleted
-        log("project is not active")
+        logger.debug("project is not active")
         gold_project = get_gold_project(pid)
         if gold_project is not None:
             call(["grmproject","-p",pid])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when project is deleted
 def project_deleted(sender, instance, **kwargs):
     pid = instance.pid
-    log("project_deleted '%s'"%(instance))
+    logger.debug("project_deleted '%s'"%(instance))
 
     # project deleted
 
@@ -254,12 +256,12 @@ def project_deleted(sender, instance, **kwargs):
     if gold_project is not None:
         call(["grmproject","-p",pid])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Called when m2m changed between user and project
 def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    log("user_project_changed '%s','%s','%s','%s','%s'"%(instance, action, reverse, model, pk_set))
+    logger.debug("user_project_changed '%s','%s','%s','%s','%s'"%(instance, action, reverse, model, pk_set))
 
     if action == "post_add":
         if reverse:
@@ -271,7 +273,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 username = gold_user["Name"]
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
-                    log("add user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("add user '%s' to project '%s'"%(username,projectname))
                     call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
         else:
             projectname = instance.pid
@@ -281,7 +283,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
-                    log("add user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("add user '%s' to project '%s'"%(username,projectname))
                     call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
 
     elif action == "post_remove":
@@ -293,7 +295,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             if gold_user is not None:
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
-                    log("delete user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("delete user '%s' to project '%s'"%(username,projectname))
                     call(["gchproject","--delUsers",username,"-p",projectname])
         else:
             projectname = instance.pid
@@ -303,7 +305,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 # Gold account may not be created yet or it may have been deleted.
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
-                    log("delete user '%s' to project '%s'"%(username,projectname))
+                    logger.debug("delete user '%s' to project '%s'"%(username,projectname))
                     call(["gchproject","--delUsers",username,"-p",projectname])
 
     elif action == "post_clear":
@@ -314,17 +316,17 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             # FIXME! What happens to default project?
             projects = get_gold_projects_in_user(username)
             for projectname in projects:
-                log("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
+                logger.debug("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
                 call(["gchproject","--delUsers",username,"-p",projectname])
         else:
             # FIXME! get_gold_users_in_project doesn't return all users in project
             projectname = instance.pid
             users = get_gold_users_in_project(projectname)
             for username in users:
-                log("remove project '%s' all users - now processing user '%s'"%(username, projectname))
+                logger.debug("remove project '%s' all users - now processing user '%s'"%(username, projectname))
                 call(["gchproject","--delUsers",username,"-p",projectname])
 
-    log(None)
+    logger.debug("returning")
     return
 
 # Setup project hooks
