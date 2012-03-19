@@ -191,7 +191,7 @@ def account_saved(sender, instance, created, **kwargs):
             call(["gchuser","-p",default_project_name,"-u",username])
 
         # update user meta information
-        call(["gchuser","-n",instance.user.get_fullname(),"-u",username])
+        call(["gchuser","-n",instance.user.get_full_name(),"-u",username])
         call(["gchuser","-E",instance.user.email,"-u",username])
 
         # add rest of projects user belongs to
