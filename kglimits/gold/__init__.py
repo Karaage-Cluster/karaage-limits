@@ -23,19 +23,29 @@ gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
-# hack because gold doesn't do it
-def quote_sql(value):
-    return value.replace("'","\\'")
 
 # used for filtering description containing \n and \r
 def filter_string(value):
     if value is None:
         value = ""
+
+    # replace whitespace with space
     value = value.replace("\n"," ")
     value = value.replace("\t"," ")
+
+    # CSV seperator
+    value = value.replace("|"," ")
+
+    # remove leading/trailing whitespace
     value = value.strip()
+
+    # hack because gold doesn't quote sql correctly
+    value = value.replace("'","\\'")
+
     # Used for stripping non-ascii characters
-    return ''.join(c for c in value if ord(c) > 31)
+    value = ''.join(c for c in value if ord(c) > 31)
+
+    return value
 
 def truncate(value, arg):
     """
@@ -197,8 +207,8 @@ def person_saved(sender, instance, created, **kwargs):
     # update user meta information
     if instance.is_active:
         for ua in instance.useraccount_set.filter(date_deleted__isnull=True):
-            call(["gchuser","-n",quote_sql(instance.get_full_name()),"-u",ua.username])
-            call(["gchuser","-E",quote_sql(instance.email),"-u",ua.username])
+            call(["gchuser","-n",filter_string(instance.get_full_name()),"-u",ua.username])
+            call(["gchuser","-E",filter_string(instance.email),"-u",ua.username])
 
     logger.debug("returning")
     return
@@ -231,8 +241,8 @@ def account_saved(sender, instance, created, **kwargs):
             call(["gchuser","-p",default_project_name,"-u",username])
 
         # update user meta information
-        call(["gchuser","-n",quote_sql(instance.user.get_full_name()),"-u",username])
-        call(["gchuser","-E",quote_sql(instance.user.email),"-u",username])
+        call(["gchuser","-n",filter_string(instance.user.get_full_name()),"-u",username])
+        call(["gchuser","-E",filter_string(instance.user.email),"-u",username])
 
         # add rest of projects user belongs to
         for project in instance.user.project_set.all():
@@ -281,9 +291,9 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        description = truncate(filter_string(instance.description), 40)
-        call(["gchproject","-d",quote_sql(description),"-p",pid])
-        #call(["gchproject","-X","Organization=%s"%quote_sql(instance.institute.name),"-p",pid])
+        description = truncate(instance.description, 40)
+        call(["gchproject","-d",filter_string(description),"-p",pid])
+        #call(["gchproject","-X","Organization=%s"%filter_string(instance.institute.name),"-p",pid])
     else:
         # project is deleted
         logger.debug("project is not active")

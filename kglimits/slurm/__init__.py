@@ -28,11 +28,21 @@ logger = logging.getLogger(__name__)
 def filter_string(value):
     if value is None:
         value = ""
+
+    # replace whitespace with space
     value = value.replace("\n"," ")
     value = value.replace("\t"," ")
+
+    # CSV seperator
+    value = value.replace("|"," ")
+
+    # remove leading/trailing whitespace
     value = value.strip()
+
     # Used for stripping non-ascii characters
-    return ''.join(c for c in value if ord(c) > 31)
+    value = ''.join(c for c in value if ord(c) > 31)
+
+    return value
 
 def truncate(value, arg):
     """
@@ -263,9 +273,9 @@ def project_saved(sender, instance, created, **kwargs):
             call(["add","account","name=%s"%pid,"grpcpumins=0"])
 
         # update project meta information
-        description = truncate(filter_string(instance.description), 40)
-        call(["modify","account","set","Description=%s"%description,"where","name=%s"%pid])
-        call(["modify","account","set","Organization=%s"%instance.institute.name,"where","name=%s"%pid])
+        description = truncate(instance.description, 40)
+        call(["modify","account","set","Description=%s"%filter_string(description),"where","name=%s"%pid])
+        call(["modify","account","set","Organization=%s"%filter_string(instance.institute.name),"where","name=%s"%pid])
     else:
         # project is deleted
         logger.debug("project is not active")
