@@ -200,6 +200,45 @@ def get_gold_projects_in_user(username):
         projects.append(v["Name"])
     return projects
 
+# Called when institute is created/updated
+def institute_saved(sender, instance, created, **kwargs):
+    name = instance.name
+    logger.debug("institute_saved '%s','%s'"%(name,created))
+
+    # institute created
+    # institute updated
+
+    gold_user = get_gold_user(name)
+    if instance.is_active:
+        # date_deleted is not set, user should exist
+        logger.debug("institute is active")
+
+        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors[185])
+    else:
+        # date_deleted is not set, user should not exist
+        logger.debug("institute is not active")
+        # delete Gold organisation if institute marked as deleted
+        call(["goldsh","Organization","Delete","Name==%s"%name])
+
+    logger.debug("returning")
+    return
+
+# Called when institute is deleted
+def institute_deleted(sender, instance, **kwargs):
+    name = instance.name
+    logger.debug("institute_deleted '%s'"%(name))
+
+    # institute deleted
+    call(["goldsh","Organization","Delete","Name==%s"%name])
+
+    logger.debug("returning")
+    return
+
+# Setup institute hooks
+signals.post_save.connect(institute_saved, sender=people.models.Institute)
+signals.post_delete.connect(institute_deleted, sender=people.models.Institute)
+
+
 # Called when person is created/updated
 def person_saved(sender, instance, created, **kwargs):
     logger.debug("person_saved '%s','%s'"%(instance.username,created))
@@ -293,7 +332,8 @@ def project_saved(sender, instance, created, **kwargs):
         # update project meta information
         name = truncate(instance.name, 40)
         call(["gchproject","-d",filter_string(name),"-p",pid])
-        #call(["gchproject","-X","Organization=%s"%filter_string(instance.institute.name),"-p",pid])
+        call(["gchproject","-X","Organization=%s"%filter_string(instance.institute.name),"-p",pid])
+        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors[185])
     else:
         # project is deleted
         logger.debug("project is not active")
