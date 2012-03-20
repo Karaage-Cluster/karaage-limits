@@ -291,8 +291,8 @@ def project_saved(sender, instance, created, **kwargs):
             call(["gmkproject","-p",pid,"-u","MEMBERS"])
 
         # update project meta information
-        description = truncate(instance.description, 40)
-        call(["gchproject","-d",filter_string(description),"-p",pid])
+        name = truncate(instance.name, 40)
+        call(["gchproject","-d",filter_string(name),"-p",pid])
         #call(["gchproject","-X","Organization=%s"%filter_string(instance.institute.name),"-p",pid])
     else:
         # project is deleted
