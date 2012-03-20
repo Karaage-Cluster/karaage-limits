@@ -23,6 +23,8 @@ slurm_default_project = settings.SLURM_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+
+# used for filtering description containing \n and \r
 def filter_string(value):
     if value is None:
         value = ""

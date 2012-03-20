@@ -23,6 +23,11 @@ gold_default_project = settings.GOLD_DEFAULT_PROJECT
 
 logger = logging.getLogger(__name__)
 
+# hack because gold doesn't do it
+def quote_sql(value):
+    return value.replace("'","\\'")
+
+# used for filtering description containing \n and \r
 def filter_string(value):
     if value is None:
         value = ""
@@ -30,7 +35,7 @@ def filter_string(value):
     value = value.replace("\t"," ")
     value = value.strip()
     # Used for stripping non-ascii characters
-    return ''.join(c for c in value if ord(c) > 31 and c != "'")
+    return ''.join(c for c in value if ord(c) > 31)
 
 def truncate(value, arg):
     """
@@ -192,8 +197,8 @@ def person_saved(sender, instance, created, **kwargs):
     # update user meta information
     if instance.is_active:
         for ua in instance.useraccount_set.filter(date_deleted__isnull=True):
-            call(["gchuser","-n",instance.get_full_name(),"-u",ua.username])
-            call(["gchuser","-E",instance.email,"-u",ua.username])
+            call(["gchuser","-n",quote_sql(instance.get_full_name()),"-u",ua.username])
+            call(["gchuser","-E",quote_sql(instance.email),"-u",ua.username])
 
     logger.debug("returning")
     return
@@ -226,8 +231,8 @@ def account_saved(sender, instance, created, **kwargs):
             call(["gchuser","-p",default_project_name,"-u",username])
 
         # update user meta information
-        call(["gchuser","-n",instance.user.get_full_name(),"-u",username])
-        call(["gchuser","-E",instance.user.email,"-u",username])
+        call(["gchuser","-n",quote_sql(instance.user.get_full_name()),"-u",username])
+        call(["gchuser","-E",quote_sql(instance.user.email),"-u",username])
 
         # add rest of projects user belongs to
         for project in instance.user.project_set.all():
@@ -277,8 +282,8 @@ def project_saved(sender, instance, created, **kwargs):
 
         # update project meta information
         description = truncate(filter_string(instance.description), 40)
-        call(["gchproject","-d",description,"-p",pid])
-        #call(["gchproject","-X","Organization=%s"%instance.institute.name,"-p",pid])
+        call(["gchproject","-d",quote_sql(description),"-p",pid])
+        #call(["gchproject","-X","Organization=%s"%quote_sql(instance.institute.name),"-p",pid])
     else:
         # project is deleted
         logger.debug("project is not active")
