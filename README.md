@@ -2,7 +2,7 @@
 
 ## Common instructions
 
-1. Install this project under /usr/local/src/
+1. Install this project under `/usr/local/src/`
 2. Create symlink, depends on python version.
 
     To find python path, at command line:
@@ -31,8 +31,8 @@
 Skip this section if not using gold.
 
 1. Install gold command line.
-2. Ensure gold installed under /usr/local/gold/bin/ and works as www-data user.
-3. In /etc/karaage/global_settings.py add:
+2. Ensure gold installed under `/usr/local/gold/bin/` and works as www-data user.
+3. In `/etc/karaage/global_settings.py` add:
 
         INSTALLED_APPS += (
             'kglimits.gold',
