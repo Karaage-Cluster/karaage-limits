@@ -14,12 +14,12 @@ if not hasattr(settings, 'SLURM_PREFIX'):
     settings.SLURM_PREFIX = [ "sudo", "-uslurm" ]
 if not hasattr(settings, 'SLURM_PATH'):
     settings.SLURM_PATH = "/usr/local/slurm/latest/bin/sacctmgr"
-if not hasattr(settings, 'SLURM_DEFAULT_PROJECT'):
-    settings.SLURM_DEFAULT_PROJECT = "default"
+if not hasattr(settings, 'SLURM_NULL_PROJECT'):
+    settings.SLURM_NULL_PROJECT = "default"
 
 slurm_prefix = settings.SLURM_PREFIX
 slurm_path = settings.SLURM_PATH
-slurm_default_project = settings.SLURM_DEFAULT_PROJECT
+slurm_null_project = settings.SLURM_NULL_PROJECT
 
 logger = logging.getLogger(__name__)
 
@@ -204,8 +204,8 @@ def account_saved(sender, instance, created, **kwargs):
     username = instance.username
     logger.debug("account_saved '%s','%s'"%(username,created))
 
-    # retrieve default project, or use default value if none
-    default_project_name = slurm_default_project
+    # retrieve default project, or use null project if none
+    default_project_name = slurm_null_project
     if instance.default_project is not None:
         default_project_name = instance.default_project.pid
 

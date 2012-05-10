@@ -32,11 +32,13 @@ Skip this section if not using gold.
 
 1. Install gold command line.
 2. Ensure gold installed under `/usr/local/gold/bin/` and works as www-data user.
+2. Add project to gold that has no access. Call it null_project (or whatever else you want).
 3. In `/etc/karaage/global_settings.py` add:
 
         INSTALLED_APPS += (
             'kglimits.gold',
         )
+        GOLD_NULL_PROJECT = null_project
 
 4. Test and fix breakage. Log file /tmp/gold.log will help resolve problems.
 
@@ -58,10 +60,12 @@ Skip this section if not using slurm.
         sudo -uslurm /usr/local/slurm/latest/bin/sacctmgr -ip
 
 3. Install these files in python path.
+2. Add project to slurm that has no access. Call it null_project (or whatever else you want).
 4. In `/etc/karaage/global_settings.py` add:
 
         INSTALLED_APPS += (
             'kglimits.slurm',
         )
+        SLURM_NULL_PROJECT = null_project
 
 5. Test and fix breakage. Log file /tmp/slurm.log will help resolve problems.

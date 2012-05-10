@@ -14,12 +14,12 @@ if not hasattr(settings, 'GOLD_PREFIX'):
     settings.GOLD_PREFIX = []
 if not hasattr(settings, 'GOLD_PATH'):
     settings.GOLD_PATH = "/usr/local/gold/bin"
-if not hasattr(settings, 'GOLD_DEFAULT_PROJECT'):
-    settings.GOLD_DEFAULT_PROJECT = "default"
+if not hasattr(settings, 'GOLD_NULL_PROJECT'):
+    settings.GOLD_NULL_PROJECT = "default"
 
 gold_prefix = settings.GOLD_PREFIX
 gold_path = settings.GOLD_PATH
-gold_default_project = settings.GOLD_DEFAULT_PROJECT
+gold_null_project = settings.GOLD_NULL_PROJECT
 
 logger = logging.getLogger(__name__)
 
@@ -259,8 +259,8 @@ def account_saved(sender, instance, created, **kwargs):
     username = instance.username
     logger.debug("account_saved '%s','%s'"%(username,created))
 
-    # retrieve default project, or use default value if none
-    default_project_name = gold_default_project
+    # retrieve default project, or use null project if none
+    default_project_name = gold_null_project
     if instance.default_project is not None:
         default_project_name = instance.default_project.pid
 
