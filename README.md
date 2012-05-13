@@ -38,7 +38,7 @@ Skip this section if not using gold.
         INSTALLED_APPS += (
             'kglimits.gold',
         )
-        GOLD_NULL_PROJECT = null_project
+        GOLD_NULL_PROJECT = "null_project"
 
 4. Test and fix breakage. Log file /tmp/gold.log will help resolve problems.
 
@@ -66,6 +66,6 @@ Skip this section if not using slurm.
         INSTALLED_APPS += (
             'kglimits.slurm',
         )
-        SLURM_NULL_PROJECT = null_project
+        SLURM_NULL_PROJECT = "null_project"
 
 5. Test and fix breakage. Log file /tmp/slurm.log will help resolve problems.
