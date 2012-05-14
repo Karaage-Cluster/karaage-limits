@@ -213,7 +213,7 @@ def institute_saved(sender, instance, created, **kwargs):
         # date_deleted is not set, user should exist
         logger.debug("institute is active")
 
-        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors[185])
+        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors=[185])
     else:
         # date_deleted is not set, user should not exist
         logger.debug("institute is not active")
@@ -332,7 +332,7 @@ def project_saved(sender, instance, created, **kwargs):
         # update project meta information
         name = truncate(instance.name, 40)
         call(["gchproject","-d",filter_string(name),"-p",pid])
-        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors[185])
+        call(["goldsh","Organization","Create","Name=%s"%name],ignore_errors=[185])
         call(["gchproject","-X","Organization=%s"%filter_string(instance.institute.name),"-p",pid])
     else:
         # project is deleted
