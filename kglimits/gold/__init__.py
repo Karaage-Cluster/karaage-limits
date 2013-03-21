@@ -285,7 +285,7 @@ def account_saved(sender, instance, created, **kwargs):
 
         # add rest of projects user belongs to
         for project in instance.user.project_set.all():
-            call(["gchproject","--addUsers",username,"-p",project.pid],ignore_errors=[74])
+            call(["gchproject","--add-user",username,"-p",project.pid],ignore_errors=[74])
     else:
         # date_deleted is not set, user should not exist
         logger.debug("account is not active")
@@ -372,7 +372,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
                     logger.debug("add user '%s' to project '%s'"%(username,projectname))
-                    call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
+                    call(["gchproject","--add-user",username,"-p",projectname],ignore_errors=[74])
         else:
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
@@ -382,7 +382,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
                     logger.debug("add user '%s' to project '%s'"%(username,projectname))
-                    call(["gchproject","--addUsers",username,"-p",projectname],ignore_errors=[74])
+                    call(["gchproject","--add-user",username,"-p",projectname],ignore_errors=[74])
 
     elif action == "post_remove":
         if reverse:
