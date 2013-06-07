@@ -394,7 +394,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 for project in model.objects.filter(pk__in=pk_set):
                     projectname = project.pid
                     logger.debug("delete user '%s' to project '%s'"%(username,projectname))
-                    call(["gchproject","--delUsers",username,"-p",projectname])
+                    call(["gchproject","--del-users",username,"-p",projectname])
         else:
             projectname = instance.pid
             for user in model.objects.filter(pk__in=pk_set):
@@ -404,7 +404,7 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
                 gold_user = get_gold_user(username)
                 if gold_user is not None:
                     logger.debug("delete user '%s' to project '%s'"%(username,projectname))
-                    call(["gchproject","--delUsers",username,"-p",projectname])
+                    call(["gchproject","--del-users",username,"-p",projectname])
 
     elif action == "post_clear":
         if reverse:
@@ -415,14 +415,14 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
             projects = get_gold_projects_in_user(username)
             for projectname in projects:
                 logger.debug("remove user '%s' all projects - now processing project '%s'"%(username,projectname))
-                call(["gchproject","--delUsers",username,"-p",projectname])
+                call(["gchproject","--del-users",username,"-p",projectname])
         else:
             # FIXME! get_gold_users_in_project doesn't return all users in project
             projectname = instance.pid
             users = get_gold_users_in_project(projectname)
             for username in users:
                 logger.debug("remove project '%s' all users - now processing user '%s'"%(username, projectname))
-                call(["gchproject","--delUsers",username,"-p",projectname])
+                call(["gchproject","--del-users",username,"-p",projectname])
 
     logger.debug("returning")
     return
