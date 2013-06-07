@@ -208,7 +208,6 @@ def institute_saved(sender, instance, created, **kwargs):
     # institute created
     # institute updated
 
-    gold_user = get_gold_user(name)
     if instance.is_active:
         # date_deleted is not set, user should exist
         logger.debug("institute is active")
