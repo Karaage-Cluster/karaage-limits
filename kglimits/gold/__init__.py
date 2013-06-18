@@ -40,7 +40,7 @@ def filter_string(value):
     value = value.strip()
 
     # hack because gold doesn't quote sql correctly
-    value = value.replace("'","\\'")
+    value = value.replace("\\","")
 
     # Used for stripping non-ascii characters
     value = ''.join(c for c in value if ord(c) > 31)
