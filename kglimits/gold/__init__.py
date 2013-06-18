@@ -43,7 +43,7 @@ def filter_string(value):
     value = value.replace("\\","")
 
     # Used for stripping non-ascii characters
-    value = ''.join(c for c in value if ord(c) > 31)
+    value = ''.join(c for c in value if ord(c) > 31 and ord(c) < 127)
 
     return value
 
