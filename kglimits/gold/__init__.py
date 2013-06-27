@@ -1,7 +1,7 @@
 from django.db.models import signals
-from karaage import people
-from karaage import machines
-from karaage import projects
+from karaage.people.models import Person, Institute
+from karaage.machines.models import UserAccount
+from karaage.projects.models import Project
 from datetime import datetime
 import subprocess
 import csv
@@ -234,8 +234,8 @@ def institute_deleted(sender, instance, **kwargs):
     return
 
 # Setup institute hooks
-signals.post_save.connect(institute_saved, sender=people.models.Institute)
-signals.post_delete.connect(institute_deleted, sender=people.models.Institute)
+signals.post_save.connect(institute_saved, sender=Institute)
+signals.post_delete.connect(institute_deleted, sender=Institute)
 
 
 # Called when person is created/updated
@@ -251,7 +251,7 @@ def person_saved(sender, instance, created, **kwargs):
     logger.debug("returning")
     return
 
-signals.post_save.connect(person_saved, sender=people.models.Person)
+signals.post_save.connect(person_saved, sender=Person)
 
 # Called when account is created/updated
 def account_saved(sender, instance, created, **kwargs):
@@ -310,8 +310,8 @@ def account_deleted(sender, instance, **kwargs):
     return
 
 # Setup account hooks
-signals.post_save.connect(account_saved, sender=machines.models.UserAccount)
-signals.post_delete.connect(account_deleted, sender=machines.models.UserAccount)
+signals.post_save.connect(account_saved, sender=UserAccount)
+signals.post_delete.connect(account_deleted, sender=UserAccount)
 
 # Called when project is saved/updated
 def project_saved(sender, instance, created, **kwargs):
@@ -427,6 +427,6 @@ def user_project_changed(sender, instance, action, reverse, model, pk_set, **kwa
     return
 
 # Setup project hooks
-signals.post_save.connect(project_saved, sender=projects.models.Project)
-signals.post_delete.connect(project_deleted, sender=projects.models.Project)
-signals.m2m_changed.connect(user_project_changed, sender=projects.models.Project.users.through)
+signals.post_save.connect(project_saved, sender=Project)
+signals.post_delete.connect(project_deleted, sender=Project)
+signals.m2m_changed.connect(user_project_changed, sender=Project.users.through)
